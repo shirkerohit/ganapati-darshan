@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Project: Ganpati Darshan — an interactive Mumbai Ganesh Mandal guide (Leaflet map + searchable list + detail panel).
+  Tech stack: HTML/CSS/JavaScript (vanilla), Tailwind CDN, Leaflet.js, no build step.
+  Data: js/data/mandals.js exports window.MANDALS (array of 40 mandal objects). Each mandal has id, name, area, category, established, lat, lng, approx, address, idol, darshan, aarti, tips, images (array), history, highlights, website, verified, image-source.
+  Key files: index.html (single-page app, details panel opens right), js/app.js (all UI/logic), js/data/mandals.js (data), css/styles.css (custom pin/styles).
+  Conventions: Use node --check js/data/mandals.js && node --check js/app.js to validate. Data ids are sequential 1..N. verified=true means fields confirmed ~98% against internet. image arrays contain only real image file URLs (.jpg/.jpeg/.png/.webp/.gif/.avif).
+  Domain: Mumbai Ganesh mandals / Ganeshotsav. Mumbaikars, Navi Mumbai, Thane mandals. "Verified" mandals have official websites and confirmed history.
+  Image policy: only add direct image file URLs (from news CDNs, official sites, Wikimedia Commons). Never HTML-page or social links in images arrays.
+
+# Per-artifact rules (optional)
+rules:
+  proposal:
+    - Keep proposals under 500 words
+    - Always include a "Non-goals" section
+  tasks:
+    - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

@@ -1305,6 +1305,29 @@
                     >
                 </button>
                 <button
+                    id="btnDarshan"
+                    class="relative flex h-10 shrink-0 items-center gap-2 rounded-xl border border-saffron-400/60 bg-gradient-to-r from-saffron-500 to-maroon-700 px-2 text-white shadow-soft transition hover:brightness-110 active:scale-95 sm:h-11 sm:px-4"
+                    title="My Darshan card"
+                    aria-label="My Darshan card"
+                >
+                    <svg
+                        class="h-5 w-5 shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                        />
+                    </svg>
+                    <span class="hidden text-sm font-bold sm:inline"
+                        >My Darshan</span
+                    >
+                </button>
+                <button
                     id="btnList"
                     class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/60 bg-white/85 text-maroon-800 shadow-soft backdrop-blur-md transition hover:scale-105 hover:bg-saffron-50 active:scale-95 sm:h-11 sm:w-11 lg:hidden"
                     title="Show mandal list"
@@ -2042,6 +2065,55 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- ===================== DARSHAN MODAL ===================== -->
+        <section
+            id="darshanPanel"
+            class="absolute inset-x-0 bottom-0 z-[1350] translate-y-[110%] transition-transform duration-300 ease-out md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[400px] md:translate-y-0 md:translate-x-[130%] md:rounded-2xl md:border md:border-white/70 md:shadow-soft md:backdrop-blur-md"
+        >
+            <div
+                class="flex max-h-[80vh] flex-col overflow-hidden rounded-t-2xl border border-white/70 bg-white/95 shadow-soft backdrop-blur-md md:max-h-full md:rounded-2xl"
+            >
+                <div
+                    class="border-b border-saffron-200/70 bg-gradient-to-b from-cream to-white px-4 pb-3 pt-4"
+                >
+                    <div class="mb-2 flex items-center justify-between">
+                        <h2
+                            class="text-sm font-extrabold uppercase tracking-widest text-saffron-800"
+                        >
+                            My Darshan
+                        </h2>
+                        <button
+                            id="btnDarshanClose"
+                            class="grid h-8 w-8 place-items-center rounded-lg text-ink/60 transition hover:bg-saffron-100"
+                            aria-label="Close My Darshan"
+                        >
+                            <svg
+                                class="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.4"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    d="m6 6 12 12M18 6 6 18"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex gap-1">
+                    <button
+                             id="btnDarshanTabCard"
+                             class="rounded-lg px-3 py-1.5 text-xs font-bold text-saffron-800 bg-saffron-100 transition"
+                         >
+                             Card
+                        </button>
+                    </div>
+                </div>
+                <div id="darshanTabCard" class="min-h-0 flex-1 overflow-y-auto px-4 py-3"></div>
             </div>
         </section>
 

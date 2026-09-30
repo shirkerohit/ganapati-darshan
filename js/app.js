@@ -459,7 +459,8 @@
   function syncBackdrop() {
     var any =
       document.getElementById('sidebar').classList.contains('sidebar--open') ||
-      document.getElementById('tripPanel').classList.contains('trip--open');
+      document.getElementById('tripPanel').classList.contains('trip--open') ||
+      document.getElementById('darshanPanel').classList.contains('trip--open');
     document.getElementById('backdrop').classList.toggle('backdrop--open', any);
   }
 
@@ -485,7 +486,25 @@
   }
 
   // ------------------------------------------------------------------
-  // Trip planner
+  // Darshan modal
+  // ------------------------------------------------------------------
+  var darshanTab = 'card';
+
+  function openDarshan() {
+    closeDetails();
+    closeTrip();
+   restoreDarshanState();
+     renderDarshanCard();
+     document.getElementById('darshanPanel').classList.add('trip--open');
+    syncBackdrop();
+  }
+
+  function closeDarshan() {
+    document.getElementById('darshanPanel').classList.remove('trip--open');
+    syncBackdrop();
+  }
+
+   // Trip planner
   // ------------------------------------------------------------------
   function inTrip(id) { return trip.indexOf(id) !== -1; }
 
@@ -647,10 +666,18 @@
     closeTrip();
   });
 
-  document.getElementById('btnTrip').addEventListener('click', openTrip);
-  document.getElementById('btnTripClose').addEventListener('click', closeTrip);
+   document.getElementById('btnTrip').addEventListener('click', openTrip);
+   document.getElementById('btnTripClose').addEventListener('click', closeTrip);
 
-  document.getElementById('tripSearch').addEventListener('input', function () {
+    document.getElementById('btnDarshan').addEventListener('click', openDarshan);
+    document.getElementById('btnDarshanClose').addEventListener('click', closeDarshan);
+    document.getElementById('backdrop').addEventListener('click', function () {
+     closeSidebar();
+     closeTrip();
+     closeDarshan();
+   });
+
+   document.getElementById('tripSearch').addEventListener('input', function () {
     renderPicker(this.value);
   });
 
@@ -675,21 +702,9 @@
     window.open(url, '_blank', 'noopener');
   });
 
-  document.getElementById('btnShare').addEventListener('click', function () {
-    var shareUrl = 'https://shirkerohit.github.io/ganapati-darshan/';
-    var shareData = {
-      title: 'Ganpati Darshan \u2014 Mumbai Ganesh Mandal Guide',
-      text: 'Top 38+ Ganesh mandals of Mumbai with darshan timings, aarti schedules & directions. Ganpati Bappa Morya!',
-      url: shareUrl,
-    };
-    if (navigator.share) {
-      navigator.share(shareData).catch(function (e) {
-        if (!e || e.name !== 'AbortError') copyShareLink(shareUrl);
-      });
-      return;
-    }
-    copyShareLink(shareUrl);
-  });
+   document.getElementById('btnShare').addEventListener('click', function () {
+     shareCardImage();
+   });
 
   function copyShareLink(url) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -818,9 +833,233 @@
   });
 
   // ------------------------------------------------------------------
-  // Init
+   // Darshan Card logic
   // ------------------------------------------------------------------
-  buildMarkers();
+   var STORE_DARSHAN_CARD = 'gd_darshanCard';
+
+   function loadJson(key, fallback) {
+    try {
+      var v = JSON.parse(localStorage.getItem(key) || 'null');
+      return v == null ? fallback : v;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function saveJson(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  function getVisited() { return visited; }
+
+  function categoryOf(m) { return m ? m.category : ''; }
+
+   function computeDarshanStats(visited, mandals) {
+     var total = 0;
+     var byCategory = {};
+     var visitedMandals = [];
+     mandals.forEach(function (m) {
+       var cat = m.category;
+       if (!byCategory[cat]) byCategory[cat] = { total: 0, visited: 0 };
+       byCategory[cat].total++;
+        if (visited[m.id]) { total++; byCategory[cat].visited++; visitedMandals.push(m); }
+      });
+      return { total: total, byCategory: byCategory, visitedMandals: visitedMandals };
+    }
+
+   function renderDarshanCard() {
+     var box = document.getElementById('darshanTabCard');
+     var stats = computeDarshanStats(getVisited(), mandals);
+     if (stats.total === 0) { renderDarshanCardEmpty(box); return; }
+     var html = '<div class="dc-card">';
+     html += '<div class="dc-card__title">My Darshan</div>';
+     html += '<div class="dc-card__subtitle">Your journey so far</div>';
+     html += '<div class="dc-card__stat"><span class="dc-card__stat-label">Mandal(s) visited</span><span class="dc-card__stat-value">' + stats.total + ' / ' + mandals.length + '</span></div>';
+       html += '<div style="margin-top:0.75rem"><p style="font-size:0.75rem;font-weight:700;color:#581010;margin-bottom:0.35rem">Visited Mandals</p><div style="display:flex;flex-wrap:wrap;gap:0.35rem">';
+       stats.visitedMandals.forEach(function (m, idx) {
+        if (idx > 0) {
+          html += '<div class="dc-card__toran-divider"><span class="toran-center">.</span></div>';
+        }
+        html += '<button type="button" class="dc-card__mandal" data-mid="' + m.id + '"><span class="mandal-dot"></span>' + esc(m.name) + '</button>';
+      });
+      html += '</div></div>';
+       var visitedCategories = [];
+      Object.keys(stats.byCategory).forEach(function (c) {
+        if (stats.byCategory[c].visited > 0 && visitedCategories.indexOf(c) === -1) {
+          visitedCategories.push(c);
+        }
+      });
+      if (visitedCategories.length > 0) {
+        html += '<div style="margin-top:0.75rem"><p style="font-size:0.75rem;font-weight:700;color:#581010;margin-bottom:0.35rem">Achievements</p><div style="display:flex;flex-wrap:wrap;gap:0.2rem">';
+        visitedCategories.forEach(function (c) {
+          html += '<span class="dc-card__achievement">' + esc(c) + '</span>';
+        });
+        html += '</div></div>';
+      }
+      html += '<button class="dc-card__share-btn" id="dcShareBtn">Share Card</button>';
+     html += '</div>';
+     box.innerHTML = html;
+     document.getElementById('dcShareBtn').addEventListener('click', shareCardImage);
+     box.querySelectorAll('.dc-card__mandal').forEach(function (btn) {
+       btn.addEventListener('click', function () { openDetails(Number(btn.dataset.mid)); });
+     });
+     saveDarshanCard({ lastViewed: Date.now() });
+   }
+
+  function renderDarshanCardEmpty(box) {
+    if (!box) box = document.getElementById('darshanTabCard');
+    box.innerHTML = '<div class="dc-card"><div class="dc-card__empty"><span class="dc-card__empty-om">ॐ</span><p class="dc-card__empty-text">No mandals visited yet.<br>Start your darshan journey!</p></div></div>';
+  }
+
+  function saveDarshanCard(state) {
+    saveJson(STORE_DARSHAN_CARD, state);
+  }
+
+  function restoreDarshanState() {
+    var state = loadJson(STORE_DARSHAN_CARD, null);
+    if (!state) saveDarshanCard({ lastViewed: Date.now() });
+  }
+
+   function generateCardImage(canvas, stats) {
+     var w = 420;
+     var pad = 16;
+     var n = stats.visitedMandals.length;
+     var visitedCategories = [];
+     Object.keys(stats.byCategory).forEach(function (c) {
+       if (stats.byCategory[c].visited > 0 && visitedCategories.indexOf(c) === -1) {
+         visitedCategories.push(c);
+       }
+     });
+     var mandalAreaH = n > 0 ? 20 + n * 16 + (n - 1) * 14 : 0;
+     var achievementAreaH = visitedCategories.length > 0 ? 28 + visitedCategories.length * 28 : 0;
+     var contentBottom = 125 + 60 + mandalAreaH + 8 + achievementAreaH;
+     var h = Math.min(Math.max(contentBottom + 80, 300), 900);
+     var dpr = window.devicePixelRatio || 1;
+     canvas.width = w * dpr;
+     canvas.height = h * dpr;
+     canvas.style.width = w + 'px';
+     canvas.style.height = h + 'px';
+     var ctx = canvas.getContext('2d');
+     ctx.scale(dpr, dpr);
+     var cardX = pad;
+     var cardY = pad;
+     var cardW = w - pad * 2;
+     var cardH = h - pad * 2;
+     ctx.fillStyle = '#701515';
+     roundRect(ctx, cardX - 6, cardY - 6, cardW + 12, cardH + 12, 12);
+     ctx.fill();
+     ctx.fillStyle = '#fbbf24';
+     roundRect(ctx, cardX - 3, cardY - 3, cardW + 6, cardH + 6, 9);
+     ctx.fill();
+     var grad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+     grad.addColorStop(0, '#fff8ef');
+     grad.addColorStop(1, '#ffedd5');
+     ctx.fillStyle = grad;
+     roundRect(ctx, cardX, cardY, cardW, cardH, 7);
+     ctx.fill();
+     ctx.strokeStyle = 'rgba(248,223,183,0.7)';
+     ctx.lineWidth = 3;
+     roundRect(ctx, cardX, cardY, cardW, cardH, 7);
+     ctx.stroke();
+     ctx.strokeStyle = 'rgba(253,126,20,0.3)';
+     ctx.lineWidth = 1;
+     ctx.setLineDash([4, 4]);
+     roundRect(ctx, cardX + 8, cardY + 8, cardW - 16, cardH - 16, 5);
+     ctx.stroke();
+     ctx.setLineDash([]);
+     ctx.fillStyle = '#701515';
+     ctx.font = "bold 24px 'Tiro Devanagari Marathi', serif";
+     ctx.textAlign = 'center';
+     ctx.fillText('My Darshan', w / 2, 55);
+     ctx.fillStyle = '#fbbf24';
+     ctx.font = "14px 'Poppins', sans-serif";
+     ctx.fillText('\u25C6 Your journey so far \u25C6', w / 2, 78);
+      ctx.fillStyle = '#581010';
+      ctx.font = "bold 16px 'Poppins', sans-serif";
+      ctx.fillText(stats.total + ' / ' + mandals.length + ' mandals visited', w / 2, 125);
+      var visitedY = 185;
+     ctx.font = "bold 11px 'Poppins', sans-serif";
+     ctx.fillStyle = '#581010';
+     ctx.fillText('Visited Mandals', w / 2, visitedY);
+     visitedY += 20;
+     var nameY = visitedY;
+     stats.visitedMandals.forEach(function (m, i) {
+       if (i > 0) {
+         ctx.strokeStyle = '#fbbf24';
+         ctx.lineWidth = 1;
+         ctx.beginPath();
+         ctx.moveTo(w / 2 - 120, nameY);
+         ctx.lineTo(w / 2 + 120, nameY);
+         ctx.stroke();
+         ctx.fillStyle = '#fd7e14';
+         ctx.font = "bold 10px 'Poppins', sans-serif";
+         ctx.fillText('\u25CF', w / 2, nameY + 4);
+         nameY += 14;
+       }
+       ctx.fillStyle = '#701515';
+       ctx.font = "bold 10px 'Tiro Devanagari Marathi', serif";
+       ctx.fillText(m.name, w / 2, nameY);
+       nameY += 16;
+      });
+      var badgeY = nameY + 8;
+      if (visitedCategories.length > 0) {
+        ctx.fillStyle = '#581010';
+        ctx.font = "bold 11px 'Poppins', sans-serif";
+        ctx.fillText('Achievements', w / 2, badgeY);
+        badgeY += 20;
+        visitedCategories.forEach(function (c) {
+          ctx.fillStyle = '#ee6304';
+          var chipW = ctx.measureText(c).width + 18;
+          roundRect(ctx, w / 2 - chipW / 2, badgeY - 11, chipW, 22, 8);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = "bold 9px 'Poppins', sans-serif";
+          ctx.fillText(c, w / 2, badgeY + 3);
+          badgeY += 28;
+        });
+      }
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad + 20, h - 60);
+      ctx.lineTo(w - pad - 20, h - 60);
+      ctx.stroke();
+     ctx.fillStyle = '#701515';
+     ctx.font = "bold 16px 'Tiro Devanagari Marathi', serif";
+     ctx.fillText('Ganpati Bappa Morya!', w / 2, h - 42);
+     ctx.fillStyle = '#9c3b0d';
+     ctx.font = "11px 'Poppins', sans-serif";
+     ctx.fillText('Ganpati Darshan \u2014 Mumbai', w / 2, h - 24);
+   }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+   function shareCardImage() {
+     var canvas = document.createElement('canvas');
+     var stats = computeDarshanStats(getVisited(), mandals);
+     generateCardImage(canvas, stats);
+     var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+     var link = document.createElement('a');
+     link.download = 'my-darshan-' + stats.total + '-of-' + mandals.length + '.jpg';
+     link.href = dataUrl;
+     document.body.appendChild(link);
+     link.click();
+     document.body.removeChild(link);
+     toast('Card image downloaded \u2014 share it on WhatsApp!');
+   }
+   buildMarkers();
   repaintMarkers();
   document.getElementById('countPill').textContent = mandals.length + ' mandals';
   buildCategoryChips();
